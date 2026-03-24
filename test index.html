@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit 4: Language Check</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#d6e4f5 0%,#e0ebf7 40%,#d2e2f4 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.pc::-webkit-scrollbar{width:5px}.pc::-webkit-scrollbar-track{background:transparent}.pc::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+.book-wrapper{perspective:2500px}
+.book{position:relative;width:1200px;height:750px;border-radius:4px;box-shadow:0 30px 60px rgba(15,23,42,.18),0 10px 25px rgba(15,23,42,.1)}
+.page-left{position:absolute;top:0;left:0;width:50%;height:100%;border-radius:4px 0 0 4px;background:linear-gradient(165deg,#fafcff,#f2f6fc);overflow:hidden}
+.page-right{position:absolute;top:0;right:0;width:50%;height:100%;border-radius:0 4px 4px 0;background:linear-gradient(165deg,#fbfdff,#f4f8fd);overflow:hidden}
+.pc{padding:1.8rem 2.2rem;height:100%;overflow-y:auto;display:flex;flex-direction:column}
+.spine{position:absolute;left:50%;top:0;height:100%;width:28px;transform:translateX(-50%);z-index:40;pointer-events:none;background:linear-gradient(to right,rgba(0,0,0,.025) 0%,rgba(0,0,0,.055) 18%,rgba(0,0,0,.015) 40%,transparent 50%,rgba(0,0,0,.015) 60%,rgba(0,0,0,.055) 82%,rgba(0,0,0,.025) 100%)}
+.lsh{position:absolute;top:0;right:0;width:20px;height:100%;background:linear-gradient(to left,rgba(0,0,0,.03),transparent);pointer-events:none;z-index:2}
+.rsh{position:absolute;top:0;left:0;width:20px;height:100%;background:linear-gradient(to right,rgba(0,0,0,.03),transparent);pointer-events:none;z-index:2}
+.flipper{position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;z-index:25;display:none}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;overflow-x:hidden}
+.flip-back{transform:rotateY(180deg)}
+.gt{background:linear-gradient(135deg,#1a4971,#1a5276);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;font-size:26px;letter-spacing:.3px;flex-shrink:0}
+.sb{width:50px;height:3.5px;border-radius:99px;margin:6px 0 14px;background:linear-gradient(to right,#38a3d4,#5b7fd6);flex-shrink:0}
+.pn{position:absolute;bottom:10px;font-size:13px;color:#cbd5e1}
+.nav{display:flex;align-items:center;gap:20px;margin-top:18px}
+.btn{padding:12px 28px;border-radius:99px;font-size:15px;font-weight:600;color:#fff;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:disabled{opacity:.2;cursor:not-allowed}.btn:active:not(:disabled){transform:scale(.95)}
+.btn-b{background:linear-gradient(135deg,#5b7a9d,#7094b8)}
+.btn-n{background:linear-gradient(135deg,#2b8fdb,#3b6fd4);box-shadow:0 4px 14px rgba(43,143,219,.25)}
+.dot{width:7px;height:7px;border-radius:50%;border:none;cursor:pointer;transition:all .3s;background:#94a3b8;opacity:.22}
+.dot.active{width:10px;height:10px;background:#2b8fdb;opacity:1;box-shadow:0 0 6px rgba(43,143,219,.4)}
+.obj-item{display:flex;align-items:start;gap:10px;margin-bottom:10px}
+.obj-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700}
+.role-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:8px;font-size:14px;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.browser-frame{border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1);border:1px solid #d1d5db}
+.browser-titlebar{display:flex;align-items:center;gap:8px;padding:5px 10px;background:linear-gradient(180deg,#e8eaed,#dee1e6);border-bottom:1px solid #c4c7cc}
+.browser-dots{display:flex;gap:5px}
+.browser-dots span{width:9px;height:9px;border-radius:50%}
+.browser-tab{font-size:10px;font-weight:600;color:#5f6368;background:#f8f9fa;border-radius:5px 5px 0 0;padding:3px 10px;border:1px solid #d1d5db;border-bottom:1px solid #f8f9fa;margin-bottom:-1px;display:flex;align-items:center;gap:4px}
+.chat-ui-header{display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid rgba(255,255,255,.06)}
+.chat-ui-avatar{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.chat-ui-body{padding:10px;background:#0f172a;min-height:50px}
+.chat-ui-msg-user{display:flex;justify-content:flex-end;margin-bottom:6px}
+.chat-ui-msg-user-bubble{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:7px 11px;border-radius:12px 12px 3px 12px;font-size:14px;line-height:1.5;max-width:90%}
+.chat-ui-msg-ai{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.chat-ui-msg-ai-avatar{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#06b6d4,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px}
+.chat-ui-msg-ai-bubble{background:#1e293b;color:#e2e8f0;padding:7px 11px;border-radius:12px 12px 12px 3px;font-size:14px;line-height:1.5;max-width:90%}
+.chat-ui-input{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0f172a;border-top:1px solid #1e293b}
+.chat-ui-input-field{flex:1;background:#1e293b;border:1px solid #334155;border-radius:99px;padding:4px 12px;font-size:11px;color:#64748b;font-family:inherit}
+.chat-ui-send{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#1d4ed8);display:flex;align-items:center;justify-content:center;border:none;cursor:default}
+.opt-btn{display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:10px;border:1.5px solid #e8ecf1;cursor:pointer;transition:all .2s;font-size:15px;font-weight:600;background:#fff;margin-bottom:6px;color:#475569;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.opt-btn:hover:not(.o-correct):not(.o-wrong):not(.o-locked){border-color:#3b82f6;background:#eff6ff;color:#1d4ed8;box-shadow:0 2px 8px rgba(59,130,246,.12)}
+.o-correct{border-color:#22c55e!important;background:#f0fdf4!important;color:#15803d!important;cursor:default;box-shadow:0 0 0 1.5px #22c55e inset!important}
+.o-wrong{border-color:#ef4444!important;background:#fef2f2!important;color:#b91c1c!important;animation:shake .4s;cursor:default;box-shadow:0 0 0 1.5px #ef4444 inset!important}
+.o-locked{opacity:.3;cursor:default;pointer-events:none}
+.opt-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.opt-row .opt-btn{flex:1;min-width:80px;justify-content:center;text-align:center;margin-bottom:0}
+.fb{padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.6;margin-top:8px;animation:fadeIn .3s ease}
+.fb-ok{background:#f0fdf4;color:#166534;border-left:3px solid #22c55e}
+.fb-no{background:#fef2f2;color:#991b1b;border-left:3px solid #ef4444}
+.fb-hint{background:#fffbeb;color:#92400e;border-left:3px solid #f59e0b}
+.q-pip{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #cbd5e1;background:#f8fafc;color:#94a3b8;transition:all .3s}
+.q-pip.done{border-color:#16a34a;background:#dcfce7;color:#16a34a}
+.word-chip{padding:10px 22px;border-radius:10px;border:2.5px solid #e2e8f0;cursor:pointer;font-size:16px;font-weight:700;font-style:italic;background:#fff;color:#334155;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;flex:1;min-width:80px}
+.word-chip:hover:not(.o-correct):not(.o-wrong):not(.o-locked){border-color:#f97316;background:#fff7ed;color:#c2410c;box-shadow:0 2px 10px rgba(249,115,22,.15);transform:translateY(-2px)}
+.us-word{padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e;font-weight:700;text-decoration:underline;text-decoration-style:wavy;text-underline-offset:3px;text-decoration-color:#f59e0b}
+.pron-hl{padding:1px 4px;border-radius:3px;background:#fef9c3;color:#854d0e;font-weight:700}
+.takeaway{display:flex;align-items:start;gap:12px;padding:12px 16px;border-radius:12px;border:1px solid;margin-bottom:10px}
+.step-lbl{display:inline-flex;align-items:center;gap:5px;font-size:15px;font-weight:700;color:#1e293b;margin-bottom:6px;margin-top:10px}
+.ref-item{display:flex;align-items:start;gap:10px;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;margin-bottom:8px;transition:all .2s}
+.ref-item:hover{border-color:#93c5fd;box-shadow:0 2px 10px rgba(59,130,246,.08)}
+.ref-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tool-card{padding:12px 16px;border-radius:12px;border:1px solid;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.tool-logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.b-para-card{display:block;padding:18px 22px;border-radius:14px;border:2px solid #e8ecf1;cursor:pointer;transition:all .2s;background:#fff;margin-bottom:10px;color:#475569;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.b-para-card:hover:not(.o-correct):not(.o-wrong):not(.o-locked){border-color:#8b5cf6;background:#faf5ff;box-shadow:0 4px 14px rgba(139,92,246,.1);transform:translateY(-2px)}
+.b-para-card.o-correct{border-color:#22c55e!important;background:#f0fdf4!important;cursor:default;box-shadow:0 0 0 2px #22c55e inset!important;transform:none}
+.b-para-card.o-wrong{border-color:#ef4444!important;background:#fef2f2!important;animation:shake .4s;cursor:default;box-shadow:0 0 0 2px #ef4444 inset!important}
+.b-para-card.o-locked{opacity:.25;cursor:default;pointer-events:none}
+.thought-bubble{background:linear-gradient(135deg,#fff7ed,#ffedd5);border:2px dashed #fdba74;border-radius:24px;padding:16px 18px;text-align:center;animation:thoughtFloat 3s ease-in-out infinite}
+.thought-dot{display:block;border-radius:50%;background:#fdba74}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.2)}50%{box-shadow:0 0 16px 4px rgba(59,130,246,.15)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes fadeShadow{0%{opacity:0}100%{opacity:1}}
+@keyframes exitB{0%{transform:translateY(0);opacity:.3}100%{transform:translateY(-8px);opacity:1}}
+@keyframes thoughtFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(max-width:960px){.book{width:95vw;height:auto;min-height:560px;display:flex;flex-direction:column}.page-left,.page-right{position:relative;width:100%;height:auto;min-height:480px;border-radius:0}.page-left{border-radius:4px 4px 0 0;border-bottom:1px solid #e2e8f0}.page-right{border-radius:0 0 4px 4px}.spine,.lsh,.rsh,.flipper{display:none!important}}
+</style>
+</head>
+<body>
+<div class="book-wrapper">
+<div class="book">
+<div class="page-left"><div class="lsh"></div>
+
+<!-- ═══ S1 LEFT — TITLE p37 ═══ -->
+<div class="pc" id="left-1">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+<div style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;background:linear-gradient(135deg,#fde68a,#fbbf24);box-shadow:0 8px 28px rgba(245,158,11,.2);animation:pulse 3s ease-in-out infinite">🔍</div>
+<p style="font-size:15px;font-weight:700;color:#b45309;margin-top:16px;text-transform:uppercase;letter-spacing:3px">Unit 4</p>
+<h1 class="gt" style="font-size:32px;margin-top:4px">Language Check</h1>
+<div style="width:50px;height:3px;border-radius:99px;margin:12px auto;background:linear-gradient(to right,#fbbf24,#f59e0b)"></div>
+<p style="font-size:20px;font-weight:700;color:#1e3a5f">Can you spot the AI's <span style="color:#b45309;text-decoration:underline;text-underline-offset:4px">language mistakes</span>?</p>
+</div>
+<div style="padding:16px 20px;border-radius:12px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;margin-top:auto;flex-shrink:0">
+<p style="font-size:17px;font-weight:700;color:#92400e;margin-bottom:12px">🎯 Learning Objectives</p>
+<div class="obj-item"><div class="obj-icon" style="background:#dcfce7;color:#16a34a">1</div><p style="font-size:15px;color:#475569;line-height:1.65">Identify common AI language mistakes</p></div>
+<div class="obj-item"><div class="obj-icon" style="background:#dbeafe;color:#2563eb">2</div><p style="font-size:15px;color:#475569;line-height:1.65">Apply reading skills to fix the language problems</p></div>
+<div class="obj-item" style="margin-bottom:0"><div class="obj-icon" style="background:#fef3c7;color:#d97706">3</div><p style="font-size:15px;color:#475569;line-height:1.65">Prevent mistakes with appropriate tools and prompting skills</p></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px;flex-shrink:0">
+<span style="font-size:14px;color:#94a3b8">⏱ ~15 min</span><span style="font-size:14px;color:#cbd5e1">•</span><span style="font-size:14px;color:#94a3b8">🎮 4 Exercises</span><span style="font-size:14px;color:#cbd5e1">•</span><span style="font-size:14px;color:#94a3b8">🧰 Interactive</span>
+</div>
+<span class="pn" style="left:20px">37</span>
+</div>
+
+<!-- ═══ S2 LEFT — A TEACHING p39 ═══ -->
+<div class="pc" id="left-2" style="display:none">
+<h2 class="gt" style="font-size:22px">🔤 A) One Word, Two Definitions</h2><div class="sb" style="background:linear-gradient(to right,#f97316,#ea580c)"></div>
+<p style="font-size:15px;color:#475569;line-height:1.6;margin-bottom:8px">Many English words have <strong>multiple meanings</strong>. When AI lacks context, it picks the most common meaning — which may be <strong style="color:#dc2626">completely wrong</strong>.</p>
+<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:8px;background:#fff7ed;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:#c2410c">🏅 Scenario — Sports student arranging airport transfer</span></div>
+<div class="browser-frame" style="margin-bottom:8px">
+<div class="browser-titlebar"><div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div><div class="browser-tab"><span style="font-size:11px">✨</span> AI Chat</div><div style="flex:1"></div></div>
+<div class="chat-ui-header"><div class="chat-ui-avatar" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6)">🤖</div><div><p style="font-size:12px;font-weight:700;color:#e2e8f0">AI Assistant</p><p style="font-size:9px;color:#64748b">Online • Model v4.0</p></div></div>
+<div class="chat-ui-body">
+<div class="chat-ui-msg-user"><div class="chat-ui-msg-user-bubble">Book a coach for the 10 VIP guests arriving from the airport.</div></div>
+<div class="chat-ui-msg-ai"><div class="chat-ui-msg-ai-avatar">✨</div><div class="chat-ui-msg-ai-bubble">Sure! I've found a professional <strong style="color:#ef4444">basketball coach</strong> available this Saturday. He can run a 2-hour training session for your 10 VIP guests after they arrive from the airport. Want me to confirm the booking? 🏀</div></div>
+</div>
+<div class="chat-ui-input"><div class="chat-ui-input-field">Type your message…</div><div class="chat-ui-send"><span style="font-size:11px;color:#fff">↑</span></div></div>
+</div>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<div style="flex:1;padding:7px 10px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca"><p style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:1px">❌ AI understood:</p><p style="font-size:13px;color:#991b1b">Coach = sports trainer</p></div>
+<div style="flex:1;padding:7px 10px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:1px">✅ You meant:</p><p style="font-size:13px;color:#166534">Coach = large passenger bus</p></div>
+</div>
+<div style="padding:7px 10px;border-radius:8px;background:linear-gradient(135deg,#14532d,#166534);margin-bottom:8px">
+<p style="font-size:11px;color:#86efac;margin-bottom:2px;font-weight:600">✏️ Fix: Add context to your prompt</p>
+<p style="font-size:13px;color:#dcfce7;font-weight:600">"Book a <u>passenger bus (coach)</u> for the 10 VIP guests arriving from the airport."</p>
+</div>
+<p style="font-size:13px;font-weight:700;color:#334155;margin-bottom:4px">💡 More words that confuse AI:</p>
+<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+<div style="padding:5px 8px;border-radius:6px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;color:#9a3412"><strong>table</strong> — furniture or data chart?</div>
+<div style="padding:5px 8px;border-radius:6px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;color:#9a3412"><strong>bill</strong> — banknote or invoice?</div>
+<div style="padding:5px 8px;border-radius:6px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;color:#9a3412"><strong>plant</strong> — flowers or machinery?</div>
+</div>
+<div style="padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,#fff7ed,#ffedd5);margin-top:auto;flex-shrink:0">
+<p style="font-size:13px;font-weight:700;color:#c2410c">💡 Prevention Tip</p>
+<p style="font-size:13px;color:#7c2d12;line-height:1.55;margin-top:3px">If a word has multiple meanings, <strong>add context</strong> or use a clearer synonym: <em>"passenger bus"</em> instead of <em>"coach"</em>.</p>
+</div>
+<span class="pn" style="left:20px">39</span>
+</div>
+
+<!-- ═══ S3 LEFT — EX A Q2 p41 ═══ -->
+<div class="pc" id="left-3" style="display:none"><div id="exA2" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="left:20px">41</span></div>
+
+<!-- ═══ S4 LEFT — B TEACHING p43 ═══ -->
+<div class="pc" id="left-4" style="display:none">
+<h2 class="gt" style="font-size:22px">👤 B) Ambiguous References</h2><div class="sb" style="background:linear-gradient(to right,#8b5cf6,#7c3aed)"></div>
+<p style="font-size:15px;color:#475569;line-height:1.6;margin-bottom:8px">AI often uses pronouns (<strong>he, she, it, they</strong>) without making it clear who or what they refer to — especially with <strong style="color:#7c3aed">two people of the same gender</strong>.</p>
+<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:8px;background:#f3e8ff;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:#6d28d9">📌 Example — Who is "He"?</span></div>
+<div style="padding:10px 12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;margin-bottom:6px">
+<p style="font-size:14px;color:#991b1b;line-height:1.6">"Chris spoke to the supervisor about the broken printer. <span class="pron-hl">He</span> said it was too old, so <span class="pron-hl">he</span> threw it away."</p>
+<p style="font-size:12px;color:#dc2626;font-weight:700;margin-top:4px">⚠️ Who said it was too old? Who threw it away?</p>
+</div>
+<div style="padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:8px">
+<p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:3px">✅ Clearer version:</p>
+<p style="font-size:14px;color:#166534;line-height:1.6">"Chris spoke to the supervisor about the broken printer. <strong>The supervisor</strong> said it was too old, so <strong>Chris</strong> threw it away."</p>
+</div>
+<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:8px;background:#f3e8ff;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:#6d28d9">📌 "It" can be confusing too!</span></div>
+<div style="padding:10px 12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;margin-bottom:6px">
+<p style="font-size:14px;color:#991b1b;line-height:1.6">"The report was sent to the client. <span class="pron-hl">It</span> was updated yesterday."</p>
+<p style="font-size:12px;color:#dc2626;font-weight:700;margin-top:3px">⚠️ What was updated — the report or the client's file?</p>
+</div>
+<div style="padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:8px">
+<p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:3px">✅ Clearer:</p>
+<p style="font-size:14px;color:#166534;line-height:1.6">"The report was sent to the client. <strong>The report</strong> was updated yesterday."</p>
+</div>
+<div style="padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,#faf5ff,#f3e8ff);margin-top:auto;flex-shrink:0">
+<p style="font-size:13px;font-weight:700;color:#6d28d9">💡 How to Fix</p>
+<p style="font-size:13px;color:#4c1d95;line-height:1.55;margin-top:3px">When reading AI text, <strong>check every pronoun</strong>. Replace "he/she/it" with the <strong>actual name or noun</strong>.</p>
+</div>
+<span class="pn" style="left:20px">43</span>
+</div>
+
+<!-- ═══ S5 LEFT — EX B Q2 p45 ═══ -->
+<div class="pc" id="left-5" style="display:none"><div id="exB2" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="left:20px">45</span></div>
+
+<!-- ═══ S6 LEFT — C TEACHING p47 ═══ -->
+<div class="pc" id="left-6" style="display:none">
+<h2 class="gt" style="font-size:22px">🌐 C) Translation Traps</h2><div class="sb" style="background:linear-gradient(to right,#06b6d4,#0891b2)"></div>
+<p style="font-size:15px;color:#475569;line-height:1.6;margin-bottom:8px">AI translates words by their <strong>most common meaning</strong>, often missing the <strong style="color:#0e7490">technical or trade-specific</strong> context you need.</p>
+<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:8px;background:#ecfeff;margin-bottom:8px"><span style="font-size:12px;font-weight:700;color:#0e7490">🔧 Example — Engineering student translating a term</span></div>
+
+<!-- Chat + Thought Bubble Layout -->
+<div style="display:flex;gap:12px;margin-bottom:10px;align-items:center">
+<div style="flex:3">
+<div class="browser-frame">
+<div class="browser-titlebar"><div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div><div class="browser-tab"><span style="font-size:11px">✨</span> AI Chat</div><div style="flex:1"></div></div>
+<div class="chat-ui-header"><div class="chat-ui-avatar" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6)">🤖</div><div><p style="font-size:12px;font-weight:700;color:#e2e8f0">AI Assistant</p><p style="font-size:9px;color:#64748b">Online • Model v4.0</p></div></div>
+<div class="chat-ui-body">
+<div class="chat-ui-msg-user"><div class="chat-ui-msg-user-bubble">What is "nut" in Chinese?</div></div>
+<div class="chat-ui-msg-ai"><div class="chat-ui-msg-ai-avatar">✨</div><div class="chat-ui-msg-ai-bubble">"Nut" in Chinese is <strong style="color:#ef4444">堅果</strong> (jiānguǒ). It refers to a hard-shelled fruit or seed. 🥜</div></div>
+</div>
+<div class="chat-ui-input"><div class="chat-ui-input-field">Type your message…</div><div class="chat-ui-send"><span style="font-size:11px;color:#fff">↑</span></div></div>
+</div>
+</div>
+<!-- Thought Bubble -->
+<div style="flex:2;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div style="position:relative">
+<div class="thought-bubble">
+<p style="font-size:10px;font-weight:800;color:#c2410c;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">💭 Student thinks:</p>
+<div style="font-size:28px;letter-spacing:4px;margin-bottom:6px">🚗🔧🔩</div>
+<p style="font-size:11px;font-weight:700;color:#9a3412;margin:0;line-height:1.45"><em>"nut" = metal<br>fastener for bolts!</em></p>
+</div>
+<div style="margin-top:6px;margin-left:14px">
+<span class="thought-dot" style="width:10px;height:10px;margin-bottom:4px"></span>
+<span class="thought-dot" style="width:7px;height:7px;opacity:.65;margin-bottom:3px"></span>
+<span class="thought-dot" style="width:4px;height:4px;opacity:.4"></span>
+</div>
+</div>
+</div>
+</div>
+
+<p style="font-size:13px;color:#dc2626;font-weight:700;margin-bottom:8px;text-align:center">❌ AI gave the food meaning 🥜 — the student needed the engineering meaning 🔩</p>
+
+<div style="padding:7px 10px;border-radius:8px;background:linear-gradient(135deg,#14532d,#166534);margin-bottom:6px">
+<p style="font-size:11px;color:#86efac;margin-bottom:2px;font-weight:600">✏️ If you must use AI, provide full context:</p>
+<p style="font-size:12px;color:#dcfce7;font-weight:600">"Translate 'nut' to Chinese. Context: <u>automotive engineering</u> — it is a metal piece with a threaded hole that screws onto a bolt."</p>
+</div>
+<div style="padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,#ecfeff,#cffafe);margin-top:auto;flex-shrink:0">
+<p style="font-size:13px;font-weight:700;color:#0e7490">💡 Prevention Tip</p>
+<p style="font-size:13px;color:#155e75;line-height:1.55;margin-top:3px">Provide a <strong>complete sentence</strong> and name the <strong>industry</strong> when asking AI to translate. AI is a <strong>text predictor, not a dictionary</strong>.</p>
+</div>
+<span class="pn" style="left:20px">47</span>
+</div>
+
+<!-- ═══ S7 LEFT — EX C Q2 p49 ═══ -->
+<div class="pc" id="left-7" style="display:none"><div id="exC2" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="left:20px">49</span></div>
+
+<!-- ═══ S8 LEFT — D TEACHING p51 ═══ -->
+<div class="pc" id="left-8" style="display:none">
+<h2 class="gt" style="font-size:24px">🌍 D) Cultural Bias</h2><div class="sb" style="background:linear-gradient(to right,#ec4899,#db2777)"></div>
+<p style="font-size:16px;color:#475569;line-height:1.7;margin-bottom:10px">AI is heavily trained on <strong style="color:#be185d">American English</strong> data. It frequently applies US norms that <strong>don't fit Hong Kong</strong>.</p>
+<p style="font-size:16px;font-weight:700;color:#334155;margin-bottom:8px">Common mismatches:</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+<div style="padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca"><p style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:1px">🇺🇸 US English</p><p style="font-size:16px;color:#991b1b;font-weight:600">color</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:1px">🇭🇰 HK English</p><p style="font-size:16px;color:#166534;font-weight:600">colour</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca"><p style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:1px">🇺🇸 Date format</p><p style="font-size:16px;color:#991b1b;font-weight:600">01/15/2025</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:1px">🇭🇰 Date format</p><p style="font-size:16px;color:#166534;font-weight:600">15/01/2025</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca"><p style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:1px">🇺🇸 Vocabulary</p><p style="font-size:16px;color:#991b1b;font-weight:600">elevator, fall, check</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:1px">🇭🇰 Vocabulary</p><p style="font-size:16px;color:#166534;font-weight:600">lift, autumn, cheque</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca"><p style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:1px">🇺🇸 Floors</p><p style="font-size:16px;color:#991b1b;font-weight:600">1st floor = ground</p></div>
+<div style="padding:8px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><p style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:1px">🇭🇰 Floors</p><p style="font-size:16px;color:#166534;font-weight:600">G/F = ground level</p></div>
+</div>
+<div style="padding:8px 12px;border-radius:8px;background:linear-gradient(135deg,#14532d,#166534);margin-bottom:8px">
+<p style="font-size:12px;color:#86efac;margin-bottom:2px;font-weight:600">✏️ Prevention — add a rule to your prompt:</p>
+<p style="font-size:14px;color:#dcfce7;font-weight:600">"Proofread my work report. <u>Use British English spelling.</u>"</p>
+</div>
+<div style="padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,#fdf2f8,#fce7f3);margin-top:auto;flex-shrink:0">
+<p style="font-size:14px;font-weight:700;color:#be185d">💡 Prevention Tip</p>
+<p style="font-size:14px;color:#831843;line-height:1.55;margin-top:3px">Always include <strong>"Use British English"</strong> in prompts. Check dates, spelling, and vocabulary yourself.</p>
+</div>
+<span class="pn" style="left:20px">51</span>
+</div>
+
+<!-- ═══ S9 LEFT — EX D P2 p53 ═══ -->
+<div class="pc" id="left-9" style="display:none"><div id="exD2" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="left:20px">53</span></div>
+
+<!-- ═══ S10 LEFT — REFERENCES p55 ═══ -->
+<div class="pc" id="left-10" style="display:none">
+<h2 class="gt" style="font-size:22px">📚 References &amp; Sources</h2><div class="sb"></div>
+<p style="font-size:14px;color:#64748b;margin-bottom:12px">Research and articles referenced in developing this unit's content:</p>
+<p style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px">📰 News &amp; Research Articles</p>
+<div class="ref-item">
+<div class="ref-icon" style="background:#fef2f2">📰</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"When AI chatbots get lost in translation"</p><p style="font-size:12px;color:#64748b;line-height:1.5">BBC News, 2024 — Coverage of real-world AI translation errors in business contexts and how ambiguous prompts cause mistranslation.</p></div>
+</div>
+<div class="ref-item">
+<div class="ref-icon" style="background:#eff6ff">📄</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"AI Language Models and Common Output Errors"</p><p style="font-size:12px;color:#64748b;line-height:1.5">OpenAI Research Blog, 2024 — Analysis of word-sense disambiguation failures in large language models.</p></div>
+</div>
+<div class="ref-item">
+<div class="ref-icon" style="background:#faf5ff">📊</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"Polysemy challenges in machine translation"</p><p style="font-size:12px;color:#64748b;line-height:1.5">Computational Linguistics Journal — Research on how words with multiple meanings cause systematic AI errors.</p></div>
+</div>
+<div class="ref-item">
+<div class="ref-icon" style="background:#ecfeff">🌏</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"American English bias in AI systems: Implications for global users"</p><p style="font-size:12px;color:#64748b;line-height:1.5">MIT Technology Review, 2024 — How training data imbalances lead to cultural and dialect bias in AI output.</p></div>
+</div>
+<div class="ref-item">
+<div class="ref-icon" style="background:#fff7ed">🔧</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"Technical terminology errors in AI-assisted translation"</p><p style="font-size:12px;color:#64748b;line-height:1.5">Google Research, 2023 — Study on AI failure rates when translating domain-specific vocabulary without context.</p></div>
+</div>
+<div class="ref-item">
+<div class="ref-icon" style="background:#fdf2f8">🇭🇰</div>
+<div><p style="font-size:13px;font-weight:600;color:#334155">"AI tools in Hong Kong classrooms: Opportunities and risks"</p><p style="font-size:12px;color:#64748b;line-height:1.5">South China Morning Post, 2024 — Report on AI adoption in HK vocational education and common student pitfalls.</p></div>
+</div>
+<span class="pn" style="left:20px">55</span>
+</div>
+
+</div><!-- end page-left -->
+
+<div class="page-right"><div class="rsh"></div>
+
+<!-- ═══ S1 RIGHT — 4.1 INTRO p38 ═══ -->
+<div class="pc" id="right-1">
+<h2 class="gt">4.1 Common AI Language Mistakes</h2><div class="sb"></div>
+<p style="font-size:16px;color:#475569;line-height:1.7;margin-bottom:12px">In Unit 1, you learned that AI can <strong style="color:#dc2626">hallucinate</strong> — generating convincing but completely false facts. But AI doesn't just get <em>facts</em> wrong. It also makes <strong>language mistakes</strong> that can change the meaning of your message entirely.</p>
+<p style="font-size:16px;color:#475569;line-height:1.7;margin-bottom:16px">In this unit, you'll learn to spot <strong>four common types</strong> of AI language errors:</p>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,#fff7ed,#ffedd5);margin-bottom:10px;box-shadow:0 2px 8px rgba(234,88,12,.06)">
+<span style="font-size:28px;flex-shrink:0">🔤</span>
+<div><p style="font-size:17px;font-weight:700;color:#c2410c">A. One Word, Two Definitions</p><p style="font-size:15px;color:#9a3412;line-height:1.55">AI picks the wrong meaning of a word</p></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,#faf5ff,#f3e8ff);margin-bottom:10px;box-shadow:0 2px 8px rgba(124,58,237,.06)">
+<span style="font-size:28px;flex-shrink:0">👤</span>
+<div><p style="font-size:17px;font-weight:700;color:#6d28d9">B. Ambiguous References</p><p style="font-size:15px;color:#4c1d95;line-height:1.55">AI uses unclear pronouns (he, she, it)</p></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,#ecfeff,#cffafe);margin-bottom:10px;box-shadow:0 2px 8px rgba(6,182,212,.06)">
+<span style="font-size:28px;flex-shrink:0">🌐</span>
+<div><p style="font-size:17px;font-weight:700;color:#0e7490">C. Translation Traps</p><p style="font-size:15px;color:#155e75;line-height:1.55">AI mistranslates technical or trade terms</p></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,#fdf2f8,#fce7f3);margin-bottom:10px;box-shadow:0 2px 8px rgba(219,39,119,.06)">
+<span style="font-size:28px;flex-shrink:0">🌍</span>
+<div><p style="font-size:17px;font-weight:700;color:#be185d">D. Cultural Bias</p><p style="font-size:15px;color:#831843;line-height:1.55">AI defaults to US English norms</p></div>
+</div>
+<div style="padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#fef3c7,#fffbeb);margin-top:auto;flex-shrink:0">
+<p style="font-size:15px;font-weight:700;color:#92400e">⚡ Key Insight</p>
+<p style="font-size:15px;color:#78350f;line-height:1.65;margin-top:4px">Just like the fake legal cases from Unit 1, AI text can look perfect but still be <strong>wrong</strong>. You must <strong>read, check, and edit</strong> every AI output before using it.</p>
+</div>
+<span class="pn" style="right:20px">38</span>
+</div>
+
+<!-- ═══ S2 RIGHT — EX A Q1 p40 ═══ -->
+<div class="pc" id="right-2" style="display:none"><div id="exA1" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">40</span></div>
+
+<!-- ═══ S3 RIGHT — EX A Q3 p42 ═══ -->
+<div class="pc" id="right-3" style="display:none"><div id="exA3" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">42</span></div>
+
+<!-- ═══ S4 RIGHT — EX B Q1 p44 ═══ -->
+<div class="pc" id="right-4" style="display:none"><div id="exB1" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">44</span></div>
+
+<!-- ═══ S5 RIGHT — EX B Q3 p46 ═══ -->
+<div class="pc" id="right-5" style="display:none"><div id="exB3" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">46</span></div>
+
+<!-- ═══ S6 RIGHT — EX C Q1 p48 ═══ -->
+<div class="pc" id="right-6" style="display:none"><div id="exC1" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">48</span></div>
+
+<!-- ═══ S7 RIGHT — EX C Q3 p50 ═══ -->
+<div class="pc" id="right-7" style="display:none"><div id="exC3" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">50</span></div>
+
+<!-- ═══ S8 RIGHT — EX D P1 p52 ═══ -->
+<div class="pc" id="right-8" style="display:none"><div id="exD1" style="flex:1;display:flex;flex-direction:column"></div><span class="pn" style="right:20px">52</span></div>
+
+<!-- ═══ S9 RIGHT — TAKEAWAYS p54 ═══ -->
+<div class="pc" id="right-9" style="display:none">
+<div style="text-align:center;flex-shrink:0;margin-bottom:14px">
+<div style="width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,#fef3c7,#fde68a);box-shadow:0 4px 16px rgba(245,158,11,.12);margin:0 auto">🏆</div>
+<h2 class="gt" style="font-size:24px;margin-top:12px">Unit 4 Complete!</h2>
+<div style="width:50px;height:3px;border-radius:99px;margin:8px auto 0;background:linear-gradient(to right,#fbbf24,#f59e0b)"></div>
+</div>
+<p style="font-size:17px;font-weight:700;color:#1e3a5f;margin-bottom:12px;flex-shrink:0">📋 Key Takeaways</p>
+<div class="takeaway" style="border-color:#fed7aa;background:linear-gradient(135deg,#fff7ed,#fff)">
+<span style="font-size:18px;flex-shrink:0">1️⃣</span>
+<div><p style="font-size:15px;font-weight:600;color:#c2410c">Words with multiple meanings need context</p><p style="font-size:14px;color:#475569;line-height:1.6;margin-top:4px">Add synonyms or descriptions to prevent AI from picking the wrong definition.</p></div>
+</div>
+<div class="takeaway" style="border-color:#e4d9ff;background:linear-gradient(135deg,#faf5ff,#fff)">
+<span style="font-size:18px;flex-shrink:0">2️⃣</span>
+<div><p style="font-size:15px;font-weight:600;color:#6d28d9">Always check pronouns in AI text</p><p style="font-size:14px;color:#475569;line-height:1.6;margin-top:4px">Replace ambiguous he/she/it with actual names or nouns before using AI text.</p></div>
+</div>
+<div class="takeaway" style="border-color:#a5f3fc;background:linear-gradient(135deg,#ecfeff,#fff)">
+<span style="font-size:18px;flex-shrink:0">3️⃣</span>
+<div><p style="font-size:15px;font-weight:600;color:#0e7490">AI is not a dictionary</p><p style="font-size:14px;color:#475569;line-height:1.6;margin-top:4px">Use proper dictionaries for technical terms. If using AI, provide full industry context.</p></div>
+</div>
+<div class="takeaway" style="border-color:#fbcfe8;background:linear-gradient(135deg,#fdf2f8,#fff)">
+<span style="font-size:18px;flex-shrink:0">4️⃣</span>
+<div><p style="font-size:15px;font-weight:600;color:#be185d">AI defaults to American English</p><p style="font-size:14px;color:#475569;line-height:1.6;margin-top:4px">Always specify "British English" in prompts and double-check spelling, dates, and vocabulary.</p></div>
+</div>
+<div style="padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);margin-top:auto;flex-shrink:0">
+<p style="font-size:15px;font-weight:700;color:#15803d">🧰 Language Check Checklist</p>
+<p style="font-size:14px;color:#166534;line-height:1.65;margin-top:4px">Before you use AI output, ask:<br>✅ Are all <strong>word meanings</strong> correct for this context?<br>✅ Are all <strong>pronouns</strong> clear?<br>✅ Are <strong>technical terms</strong> translated correctly?<br>✅ Is the <strong>spelling &amp; format</strong> British / HK English?</p>
+</div>
+<span class="pn" style="right:20px">54</span>
+</div>
+
+<!-- ═══ S10 RIGHT — TOOLS & ACKNOWLEDGMENTS p56 ═══ -->
+<div class="pc" id="right-10" style="display:none">
+<h2 class="gt" style="font-size:22px">🧰 Tools &amp; Acknowledgments</h2><div class="sb"></div>
+<p style="font-size:14px;color:#64748b;margin-bottom:12px">Tools and platforms used in the development of this interactive unit:</p>
+<p style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px">💻 Code Development</p>
+<div class="tool-card" style="border-color:#e4d9ff;background:linear-gradient(135deg,#faf5ff,#fff)">
+<div class="tool-logo" style="background:linear-gradient(135deg,#d4a574,#c4956a);color:#fff;font-weight:800;font-size:14px">C</div>
+<div><p style="font-size:14px;font-weight:700;color:#6d28d9">Claude</p><p style="font-size:12px;color:#64748b;line-height:1.5">Anthropic — AI assistant used for interactive code development, exercise logic, and educational content structuring.</p></div>
+</div>
+<div class="tool-card" style="border-color:#bfdbfe;background:linear-gradient(135deg,#eff6ff,#fff)">
+<div class="tool-logo" style="background:linear-gradient(135deg,#4285f4,#34a853);color:#fff;font-weight:800;font-size:14px">G</div>
+<div><p style="font-size:14px;font-weight:700;color:#1d4ed8">Gemini</p><p style="font-size:12px;color:#64748b;line-height:1.5">Google — AI assistant used for code verification, content cross-checking, and testing support.</p></div>
+</div>
+<p style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px;margin-top:12px">🎬 AI-Generated Video</p>
+<div class="tool-card" style="border-color:#a5f3fc;background:linear-gradient(135deg,#ecfeff,#fff)">
+<div class="tool-logo" style="background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-weight:700;font-size:10px">VTC</div>
+<div><p style="font-size:14px;font-weight:700;color:#0e7490">VTC GenAI Platform</p><p style="font-size:12px;color:#64748b;line-height:1.5">Vocational Training Council — Used for creating AI-generated instructional video segments for the teaching modules.</p></div>
+</div>
+<p style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px;margin-top:12px">🛠️ Technologies</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+<span style="padding:5px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#475569">HTML5</span>
+<span style="padding:5px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#475569">CSS3</span>
+<span style="padding:5px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#475569">JavaScript</span>
+<span style="padding:5px 10px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#475569">Responsive Design</span>
+</div>
+<div style="padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;margin-top:auto;flex-shrink:0;text-align:center">
+<p style="font-size:13px;color:#64748b;line-height:1.6">This interactive textbook unit was developed as part of the <strong style="color:#334155">VTC AI Literacy Programme</strong> for vocational education students in Hong Kong.</p>
+<p style="font-size:12px;color:#94a3b8;margin-top:6px">© 2025 Vocational Training Council</p>
+</div>
+<span class="pn" style="right:20px">56</span>
+</div>
+
+</div><!-- end page-right -->
+<div class="spine"></div>
+<div class="flipper" id="flipper"><div class="flip-front" id="flipFront"></div><div class="flip-back" id="flipBack"></div></div>
+</div>
+</div>
+
+<div class="nav">
+<button class="btn btn-b" id="btnPrev" onclick="goPrev()">‹ Back</button>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:200px">
+<div style="display:flex;gap:6px;align-items:center" id="dots"></div>
+<span style="font-size:14px;font-weight:500;color:#7094b8" id="pageLabel"></span>
+</div>
+<button class="btn btn-n" id="btnNext" onclick="goNext()">Next ›</button>
+</div>
+
+<script>
+/* ═══ CHAT UI HELPER ═══ */
+function chatUI(userMsg,aiMsg){
+return '<div class="browser-frame" style="margin-bottom:10px">'+
+'<div class="browser-titlebar"><div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div><div class="browser-tab"><span style="font-size:11px">✨</span> AI Chat</div><div style="flex:1"></div></div>'+
+'<div class="chat-ui-header"><div class="chat-ui-avatar" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6)">🤖</div><div><p style="font-size:12px;font-weight:700;color:#e2e8f0">AI Assistant</p><p style="font-size:9px;color:#64748b">Online • Model v4.0</p></div><div style="flex:1"></div><div style="display:flex;gap:8px"><span style="font-size:10px;color:#475569">⚙️</span><span style="font-size:10px;color:#475569">📋</span></div></div>'+
+'<div class="chat-ui-body">'+
+'<div class="chat-ui-msg-user"><div class="chat-ui-msg-user-bubble">'+userMsg+'</div></div>'+
+'<div class="chat-ui-msg-ai"><div class="chat-ui-msg-ai-avatar">✨</div><div class="chat-ui-msg-ai-bubble">'+aiMsg+'</div></div>'+
+'</div>'+
+'<div class="chat-ui-input"><div class="chat-ui-input-field">Type your message…</div><div class="chat-ui-send"><span style="font-size:11px;color:#fff">↑</span></div></div></div>';}
+
+/* ═══ WRONG HINT TRACKING ═══ */
+let AHint={}, BHint={}, CHint={}, DHint={};
+
+/* ═══ EXERCISE A DATA ═══ */
+const AQ=[
+{role:"🏨 Hotel Receptionist",ctx:"Warn guests about heavy traffic near the hotel",
+prompt:"Warn the guests about the jam on Nathan Road this evening.",
+ai:'Dear guests, please be careful — a large amount of <strong style="color:#ef4444">strawberry jam</strong> has been reported spilled on Nathan Road. We advise avoiding the sticky area this evening. 🍓',
+words:["jam","guests","evening"],cw:0,
+meanings:["🍓 A sweet fruit preserve spread on bread or toast","🚗 A traffic jam — heavy, slow-moving road traffic"],cm:1,
+tip:'Add context: <em>"Warn guests about the <strong>traffic jam</strong> on Nathan Road this evening."</em>',
+wrongHint1:'Look for the word that has two possible meanings — AI picked the food meaning instead of the traffic meaning!',
+wrongHint2:'That\'s the meaning AI mistakenly used. Think about what the hotel receptionist actually needed to say!'},
+{role:"💻 IT Student",ctx:"Announce new computer equipment in the office",
+prompt:"Write a notice about the new server in the office.",
+ai:'We are pleased to welcome our new <strong style="color:#ef4444">server, James</strong>, who will be serving refreshments in the office pantry area. Please say hello! 🍽️',
+words:["notice","server","office"],cw:1,
+meanings:["🍽️ A person who serves food and drinks at a restaurant","💻 A computer that stores data and manages a network"],cm:1,
+tip:'Add context: <em>"Write a notice about the new <strong>network server (computer)</strong> installed in the office."</em>',
+wrongHint1:'That word has a clear meaning here. Which word could mean either a person or a computer?',
+wrongHint2:'That\'s the meaning AI chose — but the IT student was talking about computer equipment, not a person!'},
+{role:"🏢 Office Assistant",ctx:"Your supervisor asks you to phone a client",
+prompt:"Please ring the client about their reservation.",
+ai:'Dear client, we are delighted to present you with a beautiful <strong style="color:#ef4444">diamond ring</strong> to celebrate your reservation with us. Congratulations! 💍',
+words:["ring","client","reservation"],cw:0,
+meanings:["💍 A piece of jewellery worn on the finger","📞 To make a phone call to someone"],cm:1,
+tip:'Use a clearer word: <em>"Please <strong>phone / call</strong> the client about their reservation."</em>',
+wrongHint1:'That word is straightforward in this context. Which word could mean jewellery OR a phone call?',
+wrongHint2:'That\'s the jewellery meaning AI picked. The supervisor wanted the assistant to make a phone call!'}
+];
+let AS={},AW={};
+
+function rA(qi,cid){
+const c=document.getElementById(cid);if(!c)return;const q=AQ[qi];
+if(!AS[qi])AS[qi]={step:0};const st=AS[qi];
+let done3=0;for(let i=0;i<3;i++)if(AS[i]&&AS[i].step>=2)done3++;
+const isFirst=(qi===0);
+let h='';
+if(isFirst){
+h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+'<h2 class="gt" style="font-size:20px">🔤 A: Identifying Confusing Words</h2>'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){const d=AS[i]&&AS[i].step>=2;h+='<div class="q-pip'+(d?' done':'')+'">'+(d?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+h+='<div class="sb" style="background:linear-gradient(to right,#f97316,#ea580c)"></div>';
+h+='<p style="font-size:14px;color:#64748b;margin-bottom:8px"><strong>Step 1:</strong> Tap the confused word. <strong>Step 2:</strong> Pick the correct meaning.</p>';
+}else{
+h+='<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){const d=AS[i]&&AS[i].step>=2;h+='<div class="q-pip'+(d?' done':'')+'">'+(d?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+}
+h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="role-badge">'+q.role+'</span><span style="font-size:13px;color:#94a3b8">'+q.ctx+'</span></div>';
+h+=chatUI(q.prompt,q.ai);
+h+='<p class="step-lbl" style="color:#c2410c">🔍 Step 1 — Which word confused AI?</p>';
+h+='<div class="opt-row" style="gap:10px;margin-bottom:6px">';
+q.words.forEach((w,wi)=>{
+let cls='word-chip';const wr=AW[qi+'_0'];
+if(st.step>=1){if(wi===q.cw)cls+=' o-correct';else if(wr===wi)cls+=' o-wrong';else cls+=' o-locked';}
+const ck=st.step===0?' onclick="cAW('+qi+','+wi+')"':'';
+h+='<div class="'+cls+'"'+ck+'>"'+w+'"</div>';});
+h+='</div>';
+if(AHint[qi+'_0']&&st.step===0)h+='<div class="fb fb-hint" style="font-size:13px;margin-top:4px">💡 '+q.wrongHint1+'</div>';
+if(st.step>=1){
+h+='<p class="step-lbl" style="color:#c2410c;margin-top:10px">🎯 Step 2 — What should "<em>'+q.words[q.cw]+'</em>" mean here?</p>';
+q.meanings.forEach((m,mi)=>{
+let cls='opt-btn';const wr=AW[qi+'_1'];
+if(st.step>=2){if(mi===q.cm)cls+=' o-correct';else if(wr===mi)cls+=' o-wrong';else cls+=' o-locked';}
+const ck=st.step===1?' onclick="cAM('+qi+','+mi+')"':'';
+h+='<div class="'+cls+'" style="font-size:15px;padding:12px 16px"'+ck+'>'+m+'</div>';});
+if(AHint[qi+'_1']&&st.step===1)h+='<div class="fb fb-hint" style="font-size:13px;margin-top:4px">💡 '+q.wrongHint2+'</div>';}
+if(st.step>=2)h+='<div class="fb fb-ok" style="font-size:14px">✅ Correct! '+q.tip+'</div>';
+c.innerHTML=h;}
+
+function cAW(qi,wi){if(AS[qi].step!==0)return;
+if(wi===AQ[qi].cw){AS[qi].step=1;delete AW[qi+'_0'];delete AHint[qi+'_0'];rAll();}
+else{AW[qi+'_0']=wi;AHint[qi+'_0']=true;rAll();setTimeout(()=>{delete AW[qi+'_0'];rAll();},600);}}
+function cAM(qi,mi){if(AS[qi].step!==1)return;
+if(mi===AQ[qi].cm){AS[qi].step=2;delete AW[qi+'_1'];delete AHint[qi+'_1'];rAll();}
+else{AW[qi+'_1']=mi;AHint[qi+'_1']=true;rAll();setTimeout(()=>{delete AW[qi+'_1'];rAll();},600);}}
+
+/* ═══ EXERCISE B DATA ═══ */
+const BQ=[
+{sentence:'Lisa emailed the client about the invoice. <span class="pron-hl">She</span> said <span class="pron-hl">she</span> would check it and get back to <span class="pron-hl">her</span>.',
+question:'Who will check the invoice? Who will "get back" to whom?',
+opts:["Lisa emailed the client about the invoice. <strong>The client</strong> said she would check the invoice and get back to <strong>Lisa</strong>.","Lisa emailed the client about the invoice. <strong>She</strong> said she would check it and <strong>she</strong> would get back soon."],
+correct:0,expl:'With two women, every "she" and "her" is ambiguous. Replacing pronouns with <strong>names</strong> makes it instantly clear.',
+wrongHint:'This version still uses "she" without telling us who is who. Look for the option that replaces the pronouns with actual names!'},
+{sentence:'The manager told the intern to update the report. <span class="pron-hl">He</span> said it needed more data before <span class="pron-hl">he</span> could approve it.',
+question:'Who said it needed more data? Who has approval authority?',
+opts:["<strong>He</strong> told him to update the report. <strong>He</strong> needed more data before <strong>he</strong> approved.","<strong>The manager</strong> told the intern to update the report. <strong>The manager</strong> said it needed more data before he could approve it."],
+correct:1,expl:'The manager has approval authority. Replacing "he" with <strong>"The manager"</strong> removes all doubt.',
+wrongHint:'This version repeats "he" and "him" even more — it\'s still unclear who is who. Look for the option that uses the person\'s title!'},
+{sentence:'The technician explained the problem to the customer. <span class="pron-hl">He</span> said <span class="pron-hl">it</span> would take two days to fix, and <span class="pron-hl">he</span> could collect <span class="pron-hl">it</span> on Friday.',
+question:'Who said it takes two days? Who collects what on Friday?',
+opts:["<strong>The technician</strong> explained the problem to the customer. The technician said the repair would take two days, and <strong>the customer</strong> could collect <strong>the device</strong> on Friday.","He explained the problem. <strong>He</strong> said it would take two days and <strong>he</strong> could collect <strong>it</strong> on Friday."],
+correct:0,expl:'Replacing "he" with specific names AND "it" with the actual item (<strong>"the device"</strong>) makes the sentence perfectly clear.',
+wrongHint:'This version keeps all the vague pronouns — "he" and "it" are still unclear. Look for the version that names each person and item specifically!'}
+];
+let BS={},BW={};
+
+function rB(qi,cid){
+const c=document.getElementById(cid);if(!c)return;const q=BQ[qi];
+let done3=0;for(let i=0;i<3;i++)if(BS[i])done3++;
+const isFirst=(qi===0);
+let h='';
+if(isFirst){
+h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+'<h2 class="gt" style="font-size:20px">👤 B: Fixing Unclear Pronouns</h2>'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){h+='<div class="q-pip'+(BS[i]?' done':'')+'">'+(BS[i]?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+h+='<div class="sb" style="background:linear-gradient(to right,#8b5cf6,#7c3aed)"></div>';
+h+='<p style="font-size:14px;color:#64748b;margin-bottom:10px">AI\'s pronouns are confusing! Pick the <strong>clearer rewrite</strong>.</p>';
+}else{
+h+='<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){h+='<div class="q-pip'+(BS[i]?' done':'')+'">'+(BS[i]?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+}
+h+='<div class="browser-frame" style="margin-bottom:10px">'+
+'<div class="browser-titlebar"><div class="browser-dots"><span style="background:#ff5f57"></span><span style="background:#ffbd2e"></span><span style="background:#28c840"></span></div><div class="browser-tab"><span style="font-size:11px">✨</span> AI Chat</div><div style="flex:1"></div></div>'+
+'<div class="chat-ui-header"><div class="chat-ui-avatar" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6)">🤖</div><div><p style="font-size:12px;font-weight:700;color:#e2e8f0">AI Assistant</p><p style="font-size:9px;color:#64748b">Online</p></div></div>'+
+'<div class="chat-ui-body"><div class="chat-ui-msg-ai"><div class="chat-ui-msg-ai-avatar">✨</div><div class="chat-ui-msg-ai-bubble" style="font-size:14px;line-height:1.6">'+q.sentence+'</div></div></div>'+
+'<div class="chat-ui-input"><div class="chat-ui-input-field">Type your message…</div><div class="chat-ui-send"><span style="font-size:11px;color:#fff">↑</span></div></div></div>';
+h+='<p style="font-size:14px;color:#475569;margin-bottom:10px;font-weight:600"><strong>❓ '+q.question+'</strong></p>';
+h+='<p class="step-lbl" style="color:#6d28d9">✏️ Pick the clearer rewrite:</p>';
+q.opts.forEach((o,oi)=>{
+let cls='b-para-card';const wr=BW[qi];
+if(BS[qi]){if(oi===q.correct)cls+=' o-correct';else cls+=' o-locked';}
+else if(wr===oi)cls+=' o-wrong';
+const ck=!BS[qi]?' onclick="cB('+qi+','+oi+')"':'';
+h+='<div class="'+cls+'"'+ck+'>'+
+'<div style="display:inline-flex;align-items:center;gap:6px;margin-bottom:10px">'+
+'<span style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:4px 12px;border-radius:8px;font-size:13px;font-weight:800;letter-spacing:.5px">'+String.fromCharCode(65+oi)+'</span>'+
+'<span style="font-size:12px;color:#94a3b8;font-weight:600">Option '+String.fromCharCode(65+oi)+'</span></div>'+
+'<p style="font-size:15px;line-height:1.75;color:#334155;margin:0">'+o+'</p></div>';});
+if(BHint[qi]&&!BS[qi])h+='<div class="fb fb-hint" style="font-size:13px">💡 '+q.wrongHint+'</div>';
+if(BS[qi])h+='<div class="fb fb-ok" style="font-size:13px">💡 '+q.expl+'</div>';
+c.innerHTML=h;}
+
+function cB(qi,oi){if(BS[qi])return;
+if(oi===BQ[qi].correct){BS[qi]=true;delete BW[qi];delete BHint[qi];rAll();}
+else{BW[qi]=oi;BHint[qi]=true;rAll();setTimeout(()=>{delete BW[qi];rAll();},600);}}
+
+/* ═══ EXERCISE C DATA ═══ */
+const CQ=[
+{role:"🔧 Automotive Student",term:"螺母",pron:"luómǔ",
+asked:"What does 螺母 mean in English?",
+ai:'螺母 means <strong>nut</strong> — a hard-shelled fruit or seed, such as an almond, walnut, or cashew, often eaten as a snack. 🥜',
+opts:["🥜 An edible seed with a hard shell (food)","🔩 A small metal piece with a threaded hole, used with a bolt to fasten parts"],
+correct:1,expl:'In engineering, a "nut" is a <strong>metal fastener</strong> — completely different from the food. AI picked the most common meaning, not the technical one.',
+wrongHint:'That\'s the everyday food meaning. An automotive student works with metal parts — think about what "nut" means in engineering!'},
+{role:"💻 IT Student",term:"端口",pron:"duānkǒu",
+asked:"Translate 端口 to English.",
+ai:'端口 means <strong>port</strong> — a town or city with a harbour where ships load and unload cargo, such as Hong Kong\'s Victoria Harbour. ⚓',
+opts:["⚓ A harbour or dock where ships load and unload","🔌 A connection point on a computer for data transfer (e.g., USB port)"],
+correct:1,expl:'In IT, a "port" is a <strong>connection point</strong> for data — not a shipping harbour. Always provide the technical context when asking AI to translate.',
+wrongHint:'That\'s the shipping meaning. An IT student works with computers — think about what "port" means in computing!'},
+{role:"🏨 Hospitality Student",term:"入住",pron:"rùzhù",
+asked:"What is 入住 in English?",
+ai:'入住 means to <strong>move into</strong> a new house or residence, such as after purchasing or renting a property. 🏠',
+opts:["🏠 To move into a new home permanently","🏨 To check in — register and receive a room at a hotel"],
+correct:1,expl:'In hospitality, 入住 specifically means "<strong>check in</strong>" at a hotel. AI gave the general meaning instead of the industry-specific one.',
+wrongHint:'That\'s the general meaning for housing. A hospitality student works in hotels — think about what 入住 means at a hotel front desk!'}
+];
+let CS={},CW2={};
+
+function rC(qi,cid){
+const c=document.getElementById(cid);if(!c)return;const q=CQ[qi];
+let done3=0;for(let i=0;i<3;i++)if(CS[i])done3++;
+const isFirst=(qi===0);
+let h='';
+if(isFirst){
+h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+'<h2 class="gt" style="font-size:20px">🌐 C: Correcting Wrong Translations</h2>'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){h+='<div class="q-pip'+(CS[i]?' done':'')+'">'+(CS[i]?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+h+='<div class="sb" style="background:linear-gradient(to right,#06b6d4,#0891b2)"></div>';
+h+='<p style="font-size:14px;color:#64748b;margin-bottom:8px">AI translated a term but got the wrong meaning! Pick the <strong>correct technical meaning</strong>.</p>';
+}else{
+h+='<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<3;i++){h+='<div class="q-pip'+(CS[i]?' done':'')+'">'+(CS[i]?'✓':'Q'+(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done3+'/3</span></div></div>';
+}
+h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="role-badge">'+q.role+'</span><span style="font-size:13px;color:#94a3b8">asked about <strong style="color:#0e7490">'+q.term+'</strong> <span style="font-size:11px">('+q.pron+')</span></span></div>';
+h+=chatUI(q.asked,q.ai);
+h+='<p class="step-lbl" style="color:#0e7490">🎯 What\'s the correct meaning for this trade?</p>';
+q.opts.forEach((o,oi)=>{
+let cls='opt-btn';const wr=CW2[qi];
+if(CS[qi]){if(oi===q.correct)cls+=' o-correct';else cls+=' o-locked';}
+else if(wr===oi)cls+=' o-wrong';
+const ck=!CS[qi]?' onclick="cC('+qi+','+oi+')"':'';
+h+='<div class="'+cls+'" style="font-size:15px;padding:14px 18px"'+ck+'>'+o+'</div>';});
+if(CHint[qi]&&!CS[qi])h+='<div class="fb fb-hint" style="font-size:13px">💡 '+q.wrongHint+'</div>';
+if(CS[qi])h+='<div class="fb fb-ok" style="font-size:13px">💡 '+q.expl+'</div>';
+c.innerHTML=h;}
+
+function cC(qi,oi){if(CS[qi])return;
+if(oi===CQ[qi].correct){CS[qi]=true;delete CW2[qi];delete CHint[qi];rAll();}
+else{CW2[qi]=oi;CHint[qi]=true;rAll();setTimeout(()=>{delete CW2[qi];rAll();},600);}}
+
+/* ═══ EXERCISE D DATA ═══ */
+const DQ=[
+{sentence:'Please take the <span class="us-word">elevator</span> to the 15th floor for the meeting.',us:"elevator",
+opts:["lift","escalator","stairway"],correct:0,
+expl:'In Hong Kong (British English), we say "<strong>lift</strong>", not "elevator".',
+wrongHint:'An escalator is a moving staircase, and a stairway is a set of stairs — neither is the British English word for "elevator".'},
+{sentence:'Please review the <span class="us-word">color</span> samples before the printing deadline.',us:"color",
+opts:["colour","coler","coulor"],correct:0,
+expl:'Hong Kong follows British English spelling: "<strong>colour</strong>" not "color".',
+wrongHint:'That\'s a misspelling! The correct British English form adds a "u" after the "o": c-o-l-o-u-r.'},
+{sentence:'The report must be submitted by <span class="us-word">01/15/2025</span> at 5:00 PM.',us:"01/15/2025",
+opts:["15/01/2025","2025/15/01","15-01-25"],correct:0,
+expl:'Hong Kong uses <strong>DD/MM/YYYY</strong> format, not the American MM/DD/YYYY.',
+wrongHint:'Check the format carefully. Hong Kong uses DD/MM/YYYY — the day comes first, then the month, then the full four-digit year.'},
+{sentence:'The new intern starts in the <span class="us-word">fall</span> semester this year.',us:"fall",
+opts:["autumn","winter","spring"],correct:0,
+expl:'British/HK English uses "<strong>autumn</strong>", not the American "fall".',
+wrongHint:'That\'s a different season entirely! "Fall" is the American English word for the season between summer and winter.'}
+];
+let DS={},DW={};
+
+function rD(page,cid){
+const c=document.getElementById(cid);if(!c)return;
+const start=page*2;
+let done4=0;for(let i=0;i<4;i++)if(DS[i])done4++;
+const isFirst=(page===0);
+let h='';
+if(isFirst){
+h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+'<h2 class="gt" style="font-size:20px">🌍 D: Spotting Cultural Bias</h2>'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<4;i++){h+='<div class="q-pip'+(DS[i]?' done':'')+'" style="width:24px;height:24px;font-size:11px">'+(DS[i]?'✓':(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done4+'/4</span></div></div>';
+h+='<div class="sb" style="background:linear-gradient(to right,#ec4899,#db2777)"></div>';
+h+='<p style="font-size:14px;color:#64748b;margin-bottom:10px">AI used American English! Pick the correct <strong>Hong Kong / British English</strong> replacement.</p>';
+}else{
+h+='<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">'+
+'<div style="display:flex;gap:6px;align-items:center">';
+for(let i=0;i<4;i++){h+='<div class="q-pip'+(DS[i]?' done':'')+'" style="width:24px;height:24px;font-size:11px">'+(DS[i]?'✓':(i+1))+'</div>';}
+h+='<span style="font-size:13px;color:#94a3b8;margin-left:4px">'+done4+'/4</span></div></div>';
+}
+for(let i=start;i<start+2&&i<DQ.length;i++){
+const q=DQ[i],wr=DW[i];
+h+='<div style="padding:14px 18px;border-radius:12px;background:'+(DS[i]?'linear-gradient(135deg,#f8fdf9,#f0fdf4)':'#fff')+';box-shadow:0 2px 8px rgba(15,23,42,.05);margin-bottom:12px;transition:all .2s">';
+h+='<p style="font-size:12px;font-weight:700;color:#be185d;margin-bottom:6px">Question '+(i+1)+'</p>';
+h+='<p style="font-size:16px;color:#475569;line-height:1.7;margin-bottom:10px">🤖 '+q.sentence+'</p>';
+h+='<p style="font-size:14px;font-weight:700;color:#be185d;margin-bottom:8px">🔄 In HK English, "<em>'+q.us+'</em>" should be:</p>';
+h+='<div class="opt-row" style="gap:8px">';
+q.opts.forEach((o,oi)=>{
+let cls='opt-btn';
+if(DS[i]){if(oi===q.correct)cls+=' o-correct';else cls+=' o-locked';}
+else if(wr===oi)cls+=' o-wrong';
+const ck=!DS[i]?' onclick="cD('+i+','+oi+')"':'';
+h+='<div class="'+cls+'" style="font-size:15px;padding:10px 18px"'+ck+'>'+o+'</div>';});
+h+='</div>';
+if(DHint[i]&&!DS[i])h+='<div class="fb fb-hint" style="font-size:13px;margin-top:6px">💡 '+q.wrongHint+'</div>';
+if(DS[i])h+='<div class="fb fb-ok" style="font-size:13px;margin-top:8px">🇭🇰 '+q.expl+'</div>';
+h+='</div>';}
+if(done4===4)h+='<div style="text-align:center;padding:10px;border-radius:10px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);margin-top:6px;animation:fadeIn .4s ease"><p style="font-size:15px;font-weight:700;color:#15803d">🎉 Exercise D Complete!</p></div>';
+c.innerHTML=h;}
+
+function cD(qi,oi){if(DS[qi])return;
+if(oi===DQ[qi].correct){DS[qi]=true;delete DW[qi];delete DHint[qi];rAll();}
+else{DW[qi]=oi;DHint[qi]=true;rAll();setTimeout(()=>{delete DW[qi];rAll();},600);}}
+
+/* ═══ RENDER ALL ═══ */
+function rAll(){
+rA(0,'exA1');rA(1,'exA2');rA(2,'exA3');
+rB(0,'exB1');rB(1,'exB2');rB(2,'exB3');
+rC(0,'exC1');rC(1,'exC2');rC(2,'exC3');
+rD(0,'exD1');rD(1,'exD2');}
+
+/* ═══ NAVIGATION ═══ */
+let cur=1,tot=10,animating=false;
+function showSpread(idx){for(let i=1;i<=tot;i++){document.getElementById('left-'+i).style.display=i===idx?'':'none';document.getElementById('right-'+i).style.display=i===idx?'':'none';}rAll();}
+function updateNav(){
+const prev=document.getElementById('btnPrev'),next=document.getElementById('btnNext'),label=document.getElementById('pageLabel');
+if(cur<=1){prev.textContent='‹ Unit 3';prev.disabled=false;}else{prev.textContent='‹ Back';prev.disabled=animating;}
+if(cur>=tot){next.textContent='Contents →';next.disabled=false;}else{next.textContent='Next ›';next.disabled=animating;}
+const sp=(cur-1)*2+37;label.textContent='Pages '+sp+' – '+(sp+1);
+const dots=document.getElementById('dots');dots.innerHTML='';
+for(let i=1;i<=tot;i++){const d=document.createElement('button');d.className='dot'+(i===cur?' active':'');d.onclick=()=>jumpTo(i);dots.appendChild(d);}
+}
+function jumpTo(idx){if(animating)return;cur=idx;showSpread(idx);updateNav();}
+function goNext(){if(animating)return;if(cur>=tot){animateExit('fwd');return;}animateFlip('fwd');}
+function goPrev(){if(animating)return;if(cur<=1){animateExit('bwd');return;}animateFlip('bwd');}
+
+function exitHTML(dir){
+if(dir==='fwd')return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:2rem"><div style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);box-shadow:0 8px 24px rgba(59,130,246,.15);margin-bottom:16px">📖</div><p style="font-size:22px;font-weight:800;color:#1e40af;margin-bottom:8px">Contents</p><p style="font-size:16px;color:#64748b">Returning to table of contents…</p><div style="display:flex;gap:6px;margin-top:16px"><span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:exitB .6s ease-in-out infinite alternate"></span><span style="width:8px;height:8px;border-radius:50%;background:#60a5fa;animation:exitB .6s .2s ease-in-out infinite alternate"></span><span style="width:8px;height:8px;border-radius:50%;background:#93c5fd;animation:exitB .6s .4s ease-in-out infinite alternate"></span></div></div>';
+return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:2rem"><div style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);box-shadow:0 8px 24px rgba(99,102,241,.15);margin-bottom:16px">📗</div><p style="font-size:22px;font-weight:800;color:#4338ca;margin-bottom:8px">Unit 3</p><p style="font-size:16px;color:#64748b">Returning to previous unit…</p><div style="display:flex;gap:6px;margin-top:16px"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:exitB .6s ease-in-out infinite alternate"></span><span style="width:8px;height:8px;border-radius:50%;background:#818cf8;animation:exitB .6s .2s ease-in-out infinite alternate"></span><span style="width:8px;height:8px;border-radius:50%;background:#a5b4fc;animation:exitB .6s .4s ease-in-out infinite alternate"></span></div></div>';}
+
+function animateExit(dir){
+animating=true;
+const flipper=document.getElementById('flipper'),front=document.getElementById('flipFront'),back=document.getElementById('flipBack');
+var navUrl=dir==='bwd'?'U3.html':null;
+if(dir==='fwd'){
+front.innerHTML=document.getElementById('right-'+cur).innerHTML;
+front.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;border-radius:0 4px 4px 0;background:linear-gradient(165deg,#fbfdff,#f4f8fd);padding:1.8rem 2.2rem';
+back.innerHTML=exitHTML('fwd');
+back.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;transform:rotateY(180deg);border-radius:4px 0 0 4px;background:linear-gradient(165deg,#f0f5ff,#e8effe);padding:0';
+flipper.style.cssText='position:absolute;top:0;right:0;width:50%;height:100%;transform-style:preserve-3d;z-index:25;display:block;transform-origin:left center;transform:rotateY(0deg)';
+document.getElementById('right-'+cur).style.display='none';
+const pr=document.querySelector('.page-right'),td=document.createElement('div');td.id='exitP';td.innerHTML=exitHTML('fwd');
+td.style.cssText='height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(165deg,#f0f5ff,#e8effe)';
+pr.appendChild(td);void flipper.offsetHeight;flipper.style.transition='transform 0.85s cubic-bezier(0.645,0.045,0.355,1)';flipper.style.transform='rotateY(-180deg)';
+}else{
+front.innerHTML=document.getElementById('left-'+cur).innerHTML;
+front.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;border-radius:4px 0 0 4px;background:linear-gradient(165deg,#fafcff,#f2f6fc);padding:1.8rem 2.2rem';
+back.innerHTML=exitHTML('bwd');
+back.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;transform:rotateY(180deg);border-radius:0 4px 4px 0;background:linear-gradient(165deg,#f0f0ff,#e8e6fe);padding:0';
+flipper.style.cssText='position:absolute;top:0;left:0;width:50%;height:100%;transform-style:preserve-3d;z-index:25;display:block;transform-origin:right center;transform:rotateY(0deg)';
+document.getElementById('left-'+cur).style.display='none';
+const pl=document.querySelector('.page-left'),td=document.createElement('div');td.id='exitP';td.innerHTML=exitHTML('bwd');
+td.style.cssText='height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(165deg,#f0f0ff,#e8e6fe)';
+pl.appendChild(td);void flipper.offsetHeight;flipper.style.transition='transform 0.85s cubic-bezier(0.645,0.045,0.355,1)';flipper.style.transform='rotateY(180deg)';
+}
+if(navUrl){setTimeout(function(){window.location.href=navUrl;},900);}
+}
+
+function animateFlip(dir){
+animating=true;
+const flipper=document.getElementById('flipper'),front=document.getElementById('flipFront'),back=document.getElementById('flipBack');
+const from=cur,to=dir==='fwd'?from+1:from-1;
+if(dir==='fwd'){
+front.innerHTML=document.getElementById('right-'+from).innerHTML;
+front.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;border-radius:0 4px 4px 0;background:linear-gradient(165deg,#fbfdff,#f4f8fd);padding:1.8rem 2.2rem';
+back.innerHTML=document.getElementById('left-'+to).innerHTML;
+back.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;transform:rotateY(180deg);border-radius:4px 0 0 4px;background:linear-gradient(165deg,#fafcff,#f2f6fc);padding:1.8rem 2.2rem';
+flipper.style.cssText='position:absolute;top:0;right:0;width:50%;height:100%;transform-style:preserve-3d;z-index:25;display:block;transform-origin:left center;transform:rotateY(0deg)';
+document.getElementById('right-'+from).style.display='none';
+document.getElementById('right-'+to).style.display='';
+void flipper.offsetHeight;flipper.style.transition='transform 0.85s cubic-bezier(0.645,0.045,0.355,1)';flipper.style.transform='rotateY(-180deg)';
+}else{
+front.innerHTML=document.getElementById('left-'+from).innerHTML;
+front.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;border-radius:4px 0 0 4px;background:linear-gradient(165deg,#fafcff,#f2f6fc);padding:1.8rem 2.2rem';
+back.innerHTML=document.getElementById('right-'+to).innerHTML;
+back.style.cssText='position:absolute;inset:0;backface-visibility:hidden;overflow-y:auto;transform:rotateY(180deg);border-radius:0 4px 4px 0;background:linear-gradient(165deg,#fbfdff,#f4f8fd);padding:1.8rem 2.2rem';
+flipper.style.cssText='position:absolute;top:0;left:0;width:50%;height:100%;transform-style:preserve-3d;z-index:25;display:block;transform-origin:right center;transform:rotateY(0deg)';
+document.getElementById('left-'+from).style.display='none';
+document.getElementById('left-'+to).style.display='';
+void flipper.offsetHeight;flipper.style.transition='transform 0.85s cubic-bezier(0.645,0.045,0.355,1)';flipper.style.transform='rotateY(180deg)';
+}
+setTimeout(()=>{flipper.style.display='none';flipper.style.transition='';flipper.style.transform='';cur=to;showSpread(to);animating=false;updateNav();},870);}
+
+showSpread(1);updateNav();
+</script>
+</body>
+</html>
